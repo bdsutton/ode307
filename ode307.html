@@ -8,6 +8,8 @@
   <script type="text/javascript">
     function sin(t) { return Math.sin(t); }
     function plotDirectionField() {
+      var tname = document.getElementById('tnameinput').value;
+      var yname = document.getElementById('ynameinput').value;
       var tmin = parseFloat(document.getElementById('tmininput').value);
       var tmax = parseFloat(document.getElementById('tmaxinput').value);
       var ymin = parseFloat(document.getElementById('ymininput').value);
@@ -25,6 +27,9 @@
       var ytick = [ycentertick];  for (i = 1; i<10; i++) { ytick.push(ycentertick+i*dytick);  ytick.push(ycentertick-i*dytick); };
       var f = document.getElementById('finput').value;
       var plot = document.getElementById('plot');
+      document.getElementById('delhs').innerHTML = 'd'.concat(yname,'/d',tname,' =&nbsp;');
+      document.getElementById('ictlhs').innerHTML = tname.concat('<sub>0</sub> =&nbsp;');
+      document.getElementById('icylhs').innerHTML = yname.concat('<sub>0</sub> =&nbsp;');
       if (plot.getContext) {
         var ctx = plot.getContext("2d");
         ctx.clearRect(0,0,1000,1000);
@@ -77,12 +82,16 @@
           ctx.fillText(ytick[i].toPrecision(3),25,1000*(1-(ytick[i]-ymin)/(ymax-ymin)));
           }
         var fcode = math.compile(f);
+        var variables = {};
         for (i = 0; i < 16; i++) {
           t = tmin+(i/15)*(tmax-tmin);
           for (j = 0; j < 16; j++) {
             y = ymin + ((j/15)*(ymax-ymin));
             //m = parseFloat(math.eval(f,{t: t, y: y}));
-            m = fcode.eval({t: t,y: y});
+            //m = fcode.eval({t: t,y: y});
+            variables[tname] = t;
+            variables[yname] = y;
+            m = fcode.eval(variables);
             dt = 1.0;
             dy = m;
             norm = Math.sqrt(Math.pow(dt/(tmax-tmin),2)+Math.pow(dy/(ymax-ymin),2));
@@ -98,7 +107,7 @@
             }
           }
         //var ty = rk4(f,tmin,tmax,t0,y0);
-        var ty = rk4(fcode,tmin,tmax,t0,y0);
+        var ty = rk4(fcode,tname,yname,tmin,tmax,t0,y0);
         var t = ty[0];
         var y = ty[1];
         ctx.beginPath();
@@ -133,16 +142,20 @@
       document.getElementById("y0input").value = y0;
       plotDirectionField();
       }
-    function rk4(fcode,tmin,tmax,t0,y0) {
+    function rk4(fcode,tname,yname,tmin,tmax,t0,y0) {
       h = (tmax-tmin)/1000;
       t = t0;
       y = y0;
       tsbackward = [t0];
       ysbackward = [y0];
+      var variables = {};
       for (t = t0-h; t >= tmin; t -= h) {
         tsbackward.push(t);
         //y = y-math.eval(f,{t: t, y: y})*h;
-        y = y-fcode.eval({t: t,y: y})*h;
+        //y = y-fcode.eval({t: t,y: y})*h;
+        variables[tname] = t;
+        variables[yname] = y;
+        y = y-fcode.eval(variables)*h;
         ysbackward.push(y);
         }
       t = t0;
@@ -152,7 +165,10 @@
       for (t = t0+h; t <= tmax; t += h) {
         tsforward.push(t);
         //y = y+math.eval(f,{t: t, y: y})*h;
-        y = y+fcode.eval({t: t, y: y})*h;
+        //y = y+fcode.eval({t: t, y: y})*h;
+        variables[tname] = t;
+        variables[yname] = y;
+        y = y+fcode.eval(variables)*h;
         ysforward.push(y);
         }
       return [tsbackward.reverse().concat(tsforward),ysbackward.reverse().concat(ysforward)];
@@ -179,9 +195,9 @@
   <p>
   <table style="width:600px">
   <col style="width:100px"><col style="width:100px"><col style="width:50px"><col style="width:100px"><col style="width:250px">
-  <tr><td style="text-align:right">dy/dt =&nbsp;<td colspan=4><input id="finput" class="textinput" onblur="plotDirectionField();" onkeypress="if (event.keyCode==13) { plotDirectionField(); }" type="text" value="y" style="width:100%"></input>
-  <tr><td style="text-align:right">t<sub>0</sub> =&nbsp;<td><input id="t0input" class="textinput" onblur="plotDirectionField();" onkeypress="if (event.keyCode==13) { plotDirectionField(); }" type="text" value="0" style="width:80px"></input>
-  <td style="text-align:right">y<sub>0</sub> =&nbsp;<td><input id="y0input" class="textinput" onblur="plotDirectionField();" onkeypress="if (event.keyCode==13) { plotDirectionField(); }" type="text" value="0" style="width:80px"></input>
+  <tr><td id='delhs' style="text-align:right">dy/dt =&nbsp;<td colspan=4><input id="finput" class="textinput" onblur="plotDirectionField();" onkeypress="if (event.keyCode==13) { plotDirectionField(); }" type="text" value="y" style="width:100%"></input>
+  <tr><td id='ictlhs' style="text-align:right">t<sub>0</sub> =&nbsp;<td><input id="t0input" class="textinput" onblur="plotDirectionField();" onkeypress="if (event.keyCode==13) { plotDirectionField(); }" type="text" value="0" style="width:80px"></input>
+  <td id='icylhs' style="text-align:right">y<sub>0</sub> =&nbsp;<td><input id="y0input" class="textinput" onblur="plotDirectionField();" onkeypress="if (event.keyCode==13) { plotDirectionField(); }" type="text" value="0" style="width:80px"></input>
   <td style="text-align:right"><input type="button" value='plot' onclick='plotDirectionField()'></input>
   </table>
   <p>
