@@ -110,17 +110,32 @@
         var ty = rk4(fcode,tname,yname,tmin,tmax,t0,y0);
         var t = ty[0];
         var y = ty[1];
-        ctx.beginPath();
-        ctx.moveTo(1000*(t[0]-tmin)/(tmax-tmin),1000*(1-(y[0]-ymin)/(ymax-ymin)));
-        for (i = 1; i < t.length; i++) {
-          if (y[i]>ymax+10*(ymax-ymin)) { y[i] = ymax+10*(ymax-ymin); }
-          if (y[i]<ymin-10*(ymax-ymin)) { y[i] = ymin-10*(ymax-ymin); }
-          ctx.lineTo(1000*(t[i]-tmin)/(tmax-tmin),1000*(1-(y[i]-ymin)/(ymax-ymin)));
-          }
+        console.log(t[502].toString());
+        console.log(y[502].toString());
+        var pendown = false;
         ctx.strokeStyle = '#ff0000';
         ctx.lineWidth = 4;
+        for (i = 1; i < t.length; i++) {
+          if (!isFinite(y[i])) {
+            console.log('not finite');
+            if (pendown) { ctx.stroke(); }
+            pendown = false;
+            }
+          else {
+            if (!pendown) {
+	             ctx.beginPath();
+              ctx.moveTo(1000*(t[0]-tmin)/(tmax-tmin),1000*(1-(y[0]-ymin)/(ymax-ymin)));
+              pendown = true;
+              }
+            if (y[i]>ymax+10*(ymax-ymin)) { y[i] = ymax+10*(ymax-ymin); }
+            if (y[i]<ymin-10*(ymax-ymin)) { y[i] = ymin-10*(ymax-ymin); }
+            ctx.lineTo(1000*(t[i]-tmin)/(tmax-tmin),1000*(1-(y[i]-ymin)/(ymax-ymin)));
+            }
+          }
         //ctx.closePath();
-        ctx.stroke();
+        if (pendown) {
+          ctx.stroke();
+          }
         ctx.beginPath();
         ctx.arc(1000*(t0-tmin)/(tmax-tmin),1000*(1-(y0-ymin)/(ymax-ymin)),7,0,2*Math.PI,false);
         ctx.fillStyle = '#ff0000';
@@ -149,8 +164,8 @@
       tsbackward = [t0];
       ysbackward = [y0];
       var variables = {};
-      for (t = t0-h; t >= tmin; t -= h) {
-        tsbackward.push(t);
+      for (t = t0; t >= tmin; t -= h) {
+        tsbackward.push(t-h);
         //y = y-math.eval(f,{t: t, y: y})*h;
         //y = y-fcode.eval({t: t,y: y})*h;
         variables[tname] = t;
@@ -162,8 +177,8 @@
       y = y0;
       tsforward = [t0];
       ysforward = [y0];
-      for (t = t0+h; t <= tmax; t += h) {
-        tsforward.push(t);
+      for (t = t0; t <= tmax; t += h) {
+        tsforward.push(t+h);
         //y = y+math.eval(f,{t: t, y: y})*h;
         //y = y+fcode.eval({t: t, y: y})*h;
         variables[tname] = t;
